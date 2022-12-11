@@ -23,6 +23,7 @@ async function run() {
 
     const serviceCollection = client.db("dental_care").collection("services");
     const bookingCollection = client.db("dental_care").collection("bookings");
+    const userCollection = client.db("dental_care").collection("users");
 
     app.get("/service", async (req, res) => {
       const query = {};
@@ -73,6 +74,18 @@ async function run() {
       }
       const result = await bookingCollection.insertOne(booking);
       return res.send({ success: true, result });
+    });
+
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const user = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
     });
   } finally {
   }
