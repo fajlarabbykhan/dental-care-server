@@ -42,10 +42,11 @@ async function run() {
     const serviceCollection = client.db("dental_care").collection("services");
     const bookingCollection = client.db("dental_care").collection("bookings");
     const userCollection = client.db("dental_care").collection("users");
+    const doctorCollection = client.db("dental_care").collection("doctors");
 
     app.get("/service", async (req, res) => {
       const query = {};
-      const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection.find(query).project({ name: 1 });
       const services = await cursor.toArray();
       res.send(services);
     });
@@ -144,6 +145,12 @@ async function run() {
         expiresIn: "1h",
       });
       res.send({ result, token });
+    });
+
+    app.post("/doctor", async (req, res) => {
+      const doctor = req.body;
+      const result = await doctorCollection.insertOne(doctor);
+      res.send(result);
     });
   } finally {
   }
