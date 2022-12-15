@@ -1,4 +1,6 @@
 const express = require("express");
+const nodemailer = require("nodemailer");
+const nodemailerSendgrid = require("nodemailer-sendgrid");
 const app = express();
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
@@ -31,6 +33,29 @@ function verifyJWT(req, res, next) {
     }
     req.decoded = decoded;
     next();
+  });
+}
+const transport = nodemailer.createTransport(
+  nodemailerSendgrid({
+    apiKey: process.env.EMAIL_SENDER_API,
+  })
+);
+
+function sendAppointmentEmail(booking) {
+  const { patient, patientName, treatment, date, slot } = booking;
+  transport.sendMail({
+    from: process.env.EMAIL,
+    to: patient,
+    subject: `Appointment for ${treatment} is on ${date} at ${slot} is booked`,
+    html: `
+  <div>
+  <p>Hello ${patient},</p>
+  <p>Your appointment for ${treatment} is fixed.</p>
+  <p>We want you on  ${date} at ${slot}</p>
+  <p>Our address:</p>
+  <p>Dhaka-1207,Bangladesh</p>
+  </div>
+  `,
   });
 }
 
@@ -109,6 +134,8 @@ async function run() {
         return res.send({ success: false, booking: exists });
       }
       const result = await bookingCollection.insertOne(booking);
+      /////
+      sendAppointmentEmail(booking);
       return res.send({ success: true, result });
     });
 
