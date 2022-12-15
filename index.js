@@ -6,7 +6,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 app.use(cors());
 app.use(express.json());
@@ -42,7 +42,8 @@ const transport = nodemailer.createTransport(
 );
 
 function sendAppointmentEmail(booking) {
-  const { patient, patientName, treatment, date, slot } = booking;
+  const { patient, patientName, treatment, date, slot, Treatment_fee } =
+    booking;
   transport.sendMail({
     from: process.env.EMAIL,
     to: patient,
@@ -52,6 +53,7 @@ function sendAppointmentEmail(booking) {
   <p>Hello ${patient},</p>
   <p>Your appointment for ${treatment} is fixed.</p>
   <p>We want you on  ${date} at ${slot}</p>
+  <p>Please bring $  ${Treatment_fee} for care fee</p>
   <p>Our address:</p>
   <p>Dhaka-1207,Bangladesh</p>
   </div>
@@ -122,12 +124,20 @@ async function run() {
       }
     });
 
+    app.get("/booking/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const booking = await bookingCollection.findOne(query);
+      res.send(booking);
+    });
+
     app.post("/booking", async (req, res) => {
       const booking = req.body;
       const query = {
         treatment: booking.treatment,
         date: booking.date,
         patient: booking.patient,
+        Treatment_fee: booking.Treatment_fee,
       };
       const exists = await bookingCollection.findOne(query);
       if (exists) {
